@@ -32,7 +32,7 @@
 #endif
 
 
-#define UBLOX_DEBUGGING 0
+#define UBLOX_DEBUGGING 1//modify by sjj
 #define UBLOX_FAKE_3DLOCK 0
 
 extern const AP_HAL::HAL& hal;
@@ -859,22 +859,22 @@ AP_GPS_UBLOX::_parse_gps(void)
             _unconfigured_messages |= CONFIG_RATE_STATUS;
             break;
         }
-        if (_buffer.status.fix_status & NAV_STATUS_FIX_VALID) {
-            if( (_buffer.status.fix_type == AP_GPS_UBLOX::FIX_3D) &&
-                (_buffer.status.fix_status & AP_GPS_UBLOX::NAV_STATUS_DGPS_USED)) {
-                next_fix = AP_GPS::GPS_OK_FIX_3D_DGPS;
-            }else if( _buffer.status.fix_type == AP_GPS_UBLOX::FIX_3D) {
-                next_fix = AP_GPS::GPS_OK_FIX_3D;
-            }else if (_buffer.status.fix_type == AP_GPS_UBLOX::FIX_2D) {
-                next_fix = AP_GPS::GPS_OK_FIX_2D;
-            }else{
-                next_fix = AP_GPS::NO_FIX;
-                state.status = AP_GPS::NO_FIX;
-            }
-        }else{
-            next_fix = AP_GPS::NO_FIX;
-            state.status = AP_GPS::NO_FIX;
-        }
+//        if (_buffer.status.fix_status & NAV_STATUS_FIX_VALID) {
+//            if( (_buffer.status.fix_type == AP_GPS_UBLOX::FIX_3D) &&
+//                (_buffer.status.fix_status & AP_GPS_UBLOX::NAV_STATUS_DGPS_USED)) {
+//                next_fix = AP_GPS::GPS_OK_FIX_3D_DGPS;
+//            }else if( _buffer.status.fix_type == AP_GPS_UBLOX::FIX_3D) {
+//                next_fix = AP_GPS::GPS_OK_FIX_3D;
+//            }else if (_buffer.status.fix_type == AP_GPS_UBLOX::FIX_2D) {
+//                next_fix = AP_GPS::GPS_OK_FIX_2D;
+//            }else{
+//                next_fix = AP_GPS::NO_FIX;
+//                state.status = AP_GPS::NO_FIX;
+//            }
+//        }else{
+//            next_fix = AP_GPS::NO_FIX;
+//            state.status = AP_GPS::NO_FIX;
+//        }
 #if UBLOX_FAKE_3DLOCK
         state.status = AP_GPS::GPS_OK_FIX_3D;
         next_fix = state.status;
@@ -898,22 +898,48 @@ AP_GPS_UBLOX::_parse_gps(void)
             state.time_week = _buffer.solution.week;
             break;
         }
-        if (_buffer.solution.fix_status & NAV_STATUS_FIX_VALID) {
-            if( (_buffer.solution.fix_type == AP_GPS_UBLOX::FIX_3D) &&
-                (_buffer.solution.fix_status & AP_GPS_UBLOX::NAV_STATUS_DGPS_USED)) {
-                next_fix = AP_GPS::GPS_OK_FIX_3D_DGPS;
-            }else if( _buffer.solution.fix_type == AP_GPS_UBLOX::FIX_3D) {
-                next_fix = AP_GPS::GPS_OK_FIX_3D;
-            }else if (_buffer.solution.fix_type == AP_GPS_UBLOX::FIX_2D) {
-                next_fix = AP_GPS::GPS_OK_FIX_2D;
-            }else{
-                next_fix = AP_GPS::NO_FIX;
-                state.status = AP_GPS::NO_FIX;
-            }
+        /*************************************************************************************
+//        if (_buffer.solution.fix_status & NAV_STATUS_FIX_VALID) {
+//            if( (_buffer.solution.fix_type == AP_GPS_UBLOX::FIX_3D) &&
+//                (_buffer.solution.fix_status & AP_GPS_UBLOX::NAV_STATUS_DGPS_USED)) {
+//                next_fix = AP_GPS::GPS_OK_FIX_3D_DGPS;
+//            }else if( _buffer.solution.fix_type == AP_GPS_UBLOX::FIX_3D) {
+//                next_fix = AP_GPS::GPS_OK_FIX_3D;
+//            }else if (_buffer.solution.fix_type == AP_GPS_UBLOX::FIX_2D) {
+//                next_fix = AP_GPS::GPS_OK_FIX_2D;
+//            }else{
+//                next_fix = AP_GPS::NO_FIX;
+//                state.status = AP_GPS::NO_FIX;
+//            }  *************************************by sjj */
+        if (_buffer.solution.fix_status) {//by sjj
+                    switch(_buffer.solution.fix_status)
+                    {
+                    case 12:
+                    	next_fix = AP_GPS::GPS_OK_FIX_3D;
+                    	state.status = AP_GPS::GPS_OK_FIX_3D;
+                    	break;
+                    case 5:
+                    	next_fix=AP_GPS::GPS_OK_FIX_3D_DGPS;
+                    	state.status = AP_GPS::GPS_OK_FIX_3D_DGPS;
+                    	break;
+                    case 13:
+                    	next_fix=AP_GPS::GPS_OK_FIX_3D_RTK_FLOAT;
+                    	state.status = AP_GPS::GPS_OK_FIX_3D_RTK_FLOAT;
+                    	Debug("engter 13");
+                    	break;
+
+                    case 15:
+                    	next_fix=AP_GPS::GPS_OK_FIX_3D_RTK_FIXED;
+                    	state.status = AP_GPS::GPS_OK_FIX_3D_RTK_FIXED;
+                    	break;
+                    default:
+                    	break;
+                    }
         }else{
             next_fix = AP_GPS::NO_FIX;
             state.status = AP_GPS::NO_FIX;
         }
+        Debug("next_fix=%u,state.status = %u",next_fix,state.status);//by sjj
         if(noReceivedHdop) {
             state.hdop = _buffer.solution.position_DOP;
         }
